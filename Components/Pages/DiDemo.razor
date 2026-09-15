@@ -1,0 +1,18 @@
+﻿@page "/di-demo"
+@using Blazor_StudentInfoApp.Services
+@inject IMessageService MessageService
+
+<PageTitle>Dependency Injection Demo</PageTitle>
+
+<h1>Dependency Injection Demo</h1>
+
+<p>@message</p>
+
+@code {
+    private string message = "";
+
+    protected override void OnInitialized()
+    {
+        message = MessageService.GetWelcomeMessage();
+    }
+}
