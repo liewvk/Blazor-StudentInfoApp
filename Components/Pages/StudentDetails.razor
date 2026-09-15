@@ -1,0 +1,105 @@
+﻿@page "/students/details/{Id:int}"
+@rendermode InteractiveServer
+
+@using Blazor_StudentInfoApp.Models
+@using Blazor_StudentInfoApp.Services
+
+@inject StudentApiService StudentApi
+
+<PageTitle>Student Details</PageTitle>
+
+<h1>Student Details</h1>
+
+@if (isLoading)
+{
+    <p>Loading student...</p>
+}
+else if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">
+        @errorMessage
+    </div>
+}
+else if (student == null)
+{
+    <div class="alert alert-warning">
+        Student not found.
+    </div>
+}
+else
+{
+    <div class="card">
+
+        <div class="card-body">
+
+            <h4 class="card-title">
+                @student.Name
+            </h4>
+
+            <p>
+                <strong>ID:</strong>
+                @student.Id
+            </p>
+
+            <p>
+                <strong>Name:</strong>
+                @student.Name
+            </p>
+
+            <p>
+                <strong>Course:</strong>
+                @student.Course
+            </p>
+
+            <a class="btn btn-warning"
+               href="@($"/students/edit/{student.Id}")">
+                Edit
+            </a>
+
+            <a class="btn btn-secondary ms-2"
+               href="/students">
+                Back to Students
+            </a>
+
+        </div>
+
+    </div>
+}
+
+
+@code {
+
+    [Parameter]
+    public int Id { get; set; }
+
+    private Student? student;
+
+    private bool isLoading = true;
+
+    private string errorMessage = "";
+
+
+    protected override async Task
+        OnParametersSetAsync()
+    {
+        isLoading = true;
+
+        errorMessage = "";
+
+        try
+        {
+            student =
+                await StudentApi
+                    .GetStudentAsync(Id);
+        }
+        catch (Exception ex)
+        {
+            errorMessage =
+                $"Unable to load student: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

@@ -1,0 +1,246 @@
+﻿@page "/student-api-demo"
+@rendermode InteractiveServer
+
+@using System.Net.Http.Json
+@using Blazor_StudentInfoApp.Models
+
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>Student API Demo</PageTitle>
+
+<h1>Student API Demo</h1>
+
+<p>
+    This example loads and creates students
+    through an ASP.NET Core API.
+</p>
+
+<div class="card p-3 mb-4">
+
+    <h4>Add Student</h4>
+
+    <div class="mb-3">
+
+        <label class="form-label">
+            Student Name
+        </label>
+
+        <input class="form-control"
+               @bind="newStudent.Name"
+               placeholder="Student name" />
+
+    </div>
+
+    <div class="mb-3">
+
+        <label class="form-label">
+            Course
+        </label>
+
+        <input class="form-control"
+               @bind="newStudent.Course"
+               placeholder="Course" />
+
+    </div>
+
+    <button class="btn btn-primary"
+            @onclick="AddStudent"
+            disabled="@isAdding">
+
+        @if (isAdding)
+        {
+            <span>Adding...</span>
+        }
+        else
+        {
+            <span>Add Student</span>
+        }
+
+    </button>
+
+</div>
+
+
+@if (!string.IsNullOrWhiteSpace(message))
+{
+    <div class="alert alert-success">
+        @message
+    </div>
+}
+
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">
+        @errorMessage
+    </div>
+}
+
+
+<h4>Students</h4>
+
+
+@if (isLoading)
+{
+    <p>Loading students...</p>
+}
+else if (students.Count == 0)
+{
+    <p>No students found.</p>
+}
+else
+{
+    <table class="table table-bordered table-striped">
+
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Course</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            @foreach (var student in students)
+            {
+                <tr @key="student.Id">
+
+                    <td>
+                        @student.Id
+                    </td>
+
+                    <td>
+                        @student.Name
+                    </td>
+
+                    <td>
+                        @student.Course
+                    </td>
+
+                </tr>
+            }
+
+        </tbody>
+
+    </table>
+}
+
+
+@code {
+
+    private List<Student> students = new();
+
+    private Student newStudent = new();
+
+    private string message = "";
+
+    private string errorMessage = "";
+
+    private bool isLoading = true;
+
+    private bool isAdding = false;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        // HttpClient requires an absolute base address
+        // when used by an Interactive Server component.
+
+        if (Http.BaseAddress == null)
+        {
+            Http.BaseAddress =
+                new Uri(Navigation.BaseUri);
+        }
+
+        await LoadStudents();
+    }
+
+
+    private async Task LoadStudents()
+    {
+        isLoading = true;
+
+        errorMessage = "";
+
+        try
+        {
+            students =
+                await Http.GetFromJsonAsync<List<Student>>(
+                    "api/students")
+                ?? new List<Student>();
+        }
+        catch (Exception ex)
+        {
+            errorMessage =
+                $"Error loading students: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+
+    private async Task AddStudent()
+    {
+        message = "";
+
+        errorMessage = "";
+
+        if (string.IsNullOrWhiteSpace(newStudent.Name))
+        {
+            errorMessage =
+                "Please enter a student name.";
+
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(newStudent.Course))
+        {
+            errorMessage =
+                "Please enter a course.";
+
+            return;
+        }
+
+        isAdding = true;
+
+        try
+        {
+            HttpResponseMessage response =
+                await Http.PostAsJsonAsync(
+                    "api/students",
+                    newStudent);
+
+            if (response.IsSuccessStatusCode)
+            {
+                message =
+                    "Student added successfully.";
+
+                newStudent = new Student();
+
+                await LoadStudents();
+            }
+            else
+            {
+                string serverMessage =
+                    await response.Content
+                        .ReadAsStringAsync();
+
+                errorMessage =
+                    $"Failed to add student. {serverMessage}";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage =
+                $"Error adding student: {ex.Message}";
+        }
+        finally
+        {
+            isAdding = false;
+        }
+    }
+}

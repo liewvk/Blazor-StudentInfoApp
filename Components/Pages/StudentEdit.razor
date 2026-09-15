@@ -1,0 +1,175 @@
+﻿@page "/students/edit/{Id:int}"
+@rendermode InteractiveServer
+
+@using Blazor_StudentInfoApp.Models
+@using Blazor_StudentInfoApp.Services
+
+@inject StudentApiService StudentApi
+@inject NavigationManager Navigation
+
+<PageTitle>Edit Student</PageTitle>
+
+<h1>Edit Student</h1>
+
+@if (isLoading)
+{
+    <p>Loading student...</p>
+}
+else if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">
+        @errorMessage
+    </div>
+}
+else if (student == null)
+{
+    <div class="alert alert-warning">
+        Student not found.
+    </div>
+
+    <a class="btn btn-secondary"
+       href="/students">
+        Back to Students
+    </a>
+}
+else
+{
+    <EditForm Model="student"
+              OnValidSubmit="UpdateStudent">
+
+        <DataAnnotationsValidator />
+
+        <div class="mb-3">
+
+            <label class="form-label">
+                ID
+            </label>
+
+            <input class="form-control"
+                   value="@student.Id"
+                   disabled />
+
+        </div>
+
+
+        <div class="mb-3">
+
+            <label class="form-label">
+                Name
+            </label>
+
+            <InputText class="form-control"
+                       @bind-Value="student.Name" />
+
+            <ValidationMessage For="@(() => student.Name)" />
+
+        </div>
+
+
+        <div class="mb-3">
+
+            <label class="form-label">
+                Course
+            </label>
+
+            <InputText class="form-control"
+                       @bind-Value="student.Course" />
+
+            <ValidationMessage For="@(() => student.Course)" />
+
+        </div>
+
+
+        <button type="submit"
+                class="btn btn-primary"
+                disabled="@isSaving">
+
+            @if (isSaving)
+            {
+                <span>Saving...</span>
+            }
+            else
+            {
+                <span>Save Changes</span>
+            }
+
+        </button>
+
+        <a class="btn btn-secondary ms-2"
+           href="/students">
+            Cancel
+        </a>
+
+    </EditForm>
+}
+
+
+@code {
+
+    [Parameter]
+    public int Id { get; set; }
+
+    private Student? student;
+
+    private bool isLoading = true;
+
+    private bool isSaving = false;
+
+    private string errorMessage = "";
+
+
+    protected override async Task
+        OnParametersSetAsync()
+    {
+        isLoading = true;
+
+        errorMessage = "";
+
+        try
+        {
+            student =
+                await StudentApi
+                    .GetStudentAsync(Id);
+        }
+        catch (Exception ex)
+        {
+            errorMessage =
+                $"Unable to load student: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+
+    private async Task UpdateStudent()
+    {
+        if (student == null)
+        {
+            return;
+        }
+
+        isSaving = true;
+
+        errorMessage = "";
+
+        try
+        {
+            await StudentApi
+                .UpdateStudentAsync(student);
+
+            Navigation.NavigateTo(
+                "/students");
+        }
+        catch (Exception ex)
+        {
+            errorMessage =
+                $"Unable to update student: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}

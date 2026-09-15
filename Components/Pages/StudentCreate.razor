@@ -1,0 +1,114 @@
+﻿@page "/students/create"
+@rendermode InteractiveServer
+
+@using Blazor_StudentInfoApp.Models
+@using Blazor_StudentInfoApp.Services
+
+@inject StudentApiService StudentApi
+@inject NavigationManager Navigation
+
+<PageTitle>Create Student</PageTitle>
+
+<h1>Create Student</h1>
+
+<p>
+    Enter the information for the new student.
+</p>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">
+        @errorMessage
+    </div>
+}
+
+<EditForm Model="student"
+          OnValidSubmit="CreateStudent">
+
+    <DataAnnotationsValidator />
+
+    <div class="mb-3">
+
+        <label class="form-label">
+            Name
+        </label>
+
+        <InputText class="form-control"
+                   @bind-Value="student.Name" />
+
+        <ValidationMessage For="@(() => student.Name)" />
+
+    </div>
+
+
+    <div class="mb-3">
+
+        <label class="form-label">
+            Course
+        </label>
+
+        <InputText class="form-control"
+                   @bind-Value="student.Course" />
+
+        <ValidationMessage For="@(() => student.Course)" />
+
+    </div>
+
+
+    <button type="submit"
+            class="btn btn-primary"
+            disabled="@isSaving">
+
+        @if (isSaving)
+        {
+            <span>Saving...</span>
+        }
+        else
+        {
+            <span>Create Student</span>
+        }
+
+    </button>
+
+    <a class="btn btn-secondary ms-2"
+       href="/students">
+        Cancel
+    </a>
+
+</EditForm>
+
+
+@code {
+
+    private Student student = new();
+
+    private bool isSaving = false;
+
+    private string errorMessage = "";
+
+
+    private async Task CreateStudent()
+    {
+        isSaving = true;
+
+        errorMessage = "";
+
+        try
+        {
+            await StudentApi
+                .CreateStudentAsync(student);
+
+            Navigation.NavigateTo(
+                "/students");
+        }
+        catch (Exception ex)
+        {
+            errorMessage =
+                $"Unable to create student: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}

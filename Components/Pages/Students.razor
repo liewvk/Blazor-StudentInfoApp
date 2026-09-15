@@ -1,0 +1,170 @@
+﻿@page "/students"
+@rendermode InteractiveServer
+
+@using Blazor_StudentInfoApp.Models
+@using Blazor_StudentInfoApp.Services
+
+@inject StudentApiService StudentApi
+
+<PageTitle>Students</PageTitle>
+
+<h1>Students</h1>
+
+<p>
+    Manage students using the CRUD API.
+</p>
+
+<a class="btn btn-primary mb-3"
+   href="/students/create">
+    Add New Student
+</a>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger">
+        @errorMessage
+    </div>
+}
+
+@if (!string.IsNullOrWhiteSpace(message))
+{
+    <div class="alert alert-success">
+        @message
+    </div>
+}
+
+@if (isLoading)
+{
+    <p>Loading students...</p>
+}
+else if (students.Count == 0)
+{
+    <div class="alert alert-info">
+        No students found.
+    </div>
+}
+else
+{
+    <table class="table table-bordered table-striped">
+
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Course</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            @foreach (var student in students)
+            {
+                <tr @key="student.Id">
+
+                    <td>
+                        @student.Id
+                    </td>
+
+                    <td>
+                        @student.Name
+                    </td>
+
+                    <td>
+                        @student.Course
+                    </td>
+
+                    <td>
+
+                        <a class="btn btn-info btn-sm me-1"
+                           href="@($"/students/details/{student.Id}")">
+                            Details
+                        </a>
+
+                        <a class="btn btn-warning btn-sm me-1"
+                           href="@($"/students/edit/{student.Id}")">
+                            Edit
+                        </a>
+
+                        <button class="btn btn-danger btn-sm"
+                                @onclick="() => DeleteStudent(student.Id)">
+                            Delete
+                        </button>
+
+                    </td>
+
+                </tr>
+            }
+
+        </tbody>
+
+    </table>
+}
+
+
+@code {
+
+    private List<Student> students = new();
+
+    private bool isLoading = true;
+
+    private string message = "";
+
+    private string errorMessage = "";
+
+
+    protected override async Task
+        OnInitializedAsync()
+    {
+        await LoadStudents();
+    }
+
+
+    private async Task LoadStudents()
+    {
+        isLoading = true;
+
+        errorMessage = "";
+
+        try
+        {
+            students =
+                await StudentApi
+                    .GetStudentsAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage =
+                $"Unable to load students: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+
+    private async Task DeleteStudent(
+        int id)
+    {
+        message = "";
+
+        errorMessage = "";
+
+        try
+        {
+            await StudentApi
+                .DeleteStudentAsync(id);
+
+            message =
+                "Student deleted successfully.";
+
+            await LoadStudents();
+        }
+        catch (Exception ex)
+        {
+            errorMessage =
+                $"Unable to delete student: {ex.Message}";
+        }
+    }
+}
