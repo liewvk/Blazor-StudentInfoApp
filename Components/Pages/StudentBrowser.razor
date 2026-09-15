@@ -1,0 +1,189 @@
+﻿@page "/student-browser"
+@rendermode InteractiveServer
+
+<PageTitle>Student Browser</PageTitle>
+
+<h1>Student Browser</h1>
+
+<p>
+    Search for students, filter them by course,
+    and sort the results by name.
+</p>
+
+<div class="mb-3">
+    <label class="form-label">Search Student</label>
+
+    <input class="form-control"
+           @bind="searchText"
+           @bind:event="oninput"
+           placeholder="Search students" />
+</div>
+
+<div class="mb-3">
+    <label class="form-label">Course</label>
+
+    <select class="form-select"
+            @bind="selectedCourse">
+
+        <option value="">All Courses</option>
+        <option value="Blazor">Blazor</option>
+        <option value="C#">C#</option>
+        <option value="ASP.NET Core">ASP.NET Core</option>
+
+    </select>
+</div>
+
+<div class="mb-3">
+    <button class="btn btn-primary"
+            @onclick="SortByName">
+        @SortButtonText
+    </button>
+
+    <button class="btn btn-secondary ms-2"
+            @onclick="ClearFilters">
+        Clear Filters
+    </button>
+</div>
+
+<p>
+    <strong>Students found:</strong>
+    @filteredStudents.Count()
+</p>
+
+@if (!filteredStudents.Any())
+{
+    <div class="alert alert-warning">
+        No students found.
+    </div>
+}
+else
+{
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Course</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var student in filteredStudents)
+            {
+                <tr @key="student.Id">
+                    <td>@student.Id</td>
+                    <td>@student.Name</td>
+                    <td>@student.Course</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private string searchText = "";
+    private string selectedCourse = "";
+    private bool sortAscending = true;
+
+    private List<Student> students = new()
+    {
+        new Student
+        {
+            Id = 1,
+            Name = "Alice Tan",
+            Course = "Blazor"
+        },
+
+        new Student
+        {
+            Id = 2,
+            Name = "John Lee",
+            Course = "C#"
+        },
+
+        new Student
+        {
+            Id = 3,
+            Name = "Siti Aminah",
+            Course = "ASP.NET Core"
+        },
+
+        new Student
+        {
+            Id = 4,
+            Name = "Rahul Kumar",
+            Course = "Blazor"
+        },
+
+        new Student
+        {
+            Id = 5,
+            Name = "Emily Wong",
+            Course = "C#"
+        },
+
+        new Student
+        {
+            Id = 6,
+            Name = "Daniel Lim",
+            Course = "ASP.NET Core"
+        }
+    };
+
+    private IEnumerable<Student> filteredStudents
+    {
+        get
+        {
+            IEnumerable<Student> query = students;
+
+            // Filter by student name
+            if (!string.IsNullOrWhiteSpace(searchText))
+            {
+                query = query.Where(student =>
+                    student.Name.Contains(
+                        searchText,
+                        StringComparison.OrdinalIgnoreCase));
+            }
+
+            // Filter by course
+            if (!string.IsNullOrWhiteSpace(selectedCourse))
+            {
+                query = query.Where(student =>
+                    student.Course == selectedCourse);
+            }
+
+            // Sort by student name
+            query = sortAscending
+                ? query.OrderBy(student => student.Name)
+                : query.OrderByDescending(student => student.Name);
+
+            return query;
+        }
+    }
+
+    private string SortButtonText =>
+        sortAscending
+            ? "Sort Name Z-A"
+            : "Sort Name A-Z";
+
+    private void SortByName()
+    {
+        sortAscending = !sortAscending;
+    }
+
+    private void ClearFilters()
+    {
+        searchText = "";
+        selectedCourse = "";
+    }
+
+    public class Student
+    {
+        public int Id { get; set; }
+
+        public string Name { get; set; } = "";
+
+        public string Course { get; set; } = "";
+    }
+}
+}
